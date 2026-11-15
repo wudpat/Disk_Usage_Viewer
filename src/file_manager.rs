@@ -3,7 +3,7 @@ mod file_manager {
 
     pub struct SelectedFolder {
         path: String,
-        pub files: Vec<fs::DirEntry>
+        files: Vec<fs::DirEntry>
     }
     
     impl SelectedFolder {
@@ -15,9 +15,11 @@ mod file_manager {
         }
 
         fn read_folder_files(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+            self.files.clear();
             for file in fs::read_dir(&self.path)? {
                 match file {
-                    Ok(successful_file) => self.files.push(successful_file),
+                    Ok(successful_file) if successful_file.file_type()?.is_file() => self.files.push(successful_file),
+                    Ok(_) => {},
                     Err(e) => return Err(e.into())
                 }
             }
@@ -54,11 +56,15 @@ mod file_manager {
             }
         }
 
-        pub fn delete_file(&mut self, target_file_paths: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+        pub fn delete_file(&mut self, target_file_paths: &Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
             for file_path in target_file_paths {
                 fs::remove_file(file_path)?
             }
             Ok(())
+        }
+
+        pub fn get_files(&self) -> &Vec<fs::DirEntry> {
+            &self.files
         }
     }
 }
