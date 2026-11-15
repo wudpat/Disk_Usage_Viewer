@@ -1,6 +1,5 @@
 mod file_manager {
     use std::fs;
-    use std::io;
 
     pub struct SelectedFolder {
         path: String,
