@@ -2,30 +2,24 @@ mod file_manager {
     use std::fs;
     use std::io;
 
-    pub struct SelectedFile {
+    pub struct SelectedFolder {
         path: String,
-        specific_file_type: Option<String>,
-        files: Vec<fs::DirEntry>
+        pub files: Vec<fs::DirEntry>
     }
     
-    impl SelectedFile {
-        pub fn new(input_path: String) -> SelectedFile {
-            SelectedFile {
+    impl SelectedFolder {
+        pub fn new(input_path: String) -> SelectedFolder {
+            SelectedFolder {
                 path: input_path,
-                specific_file_type: None,
                 files: Vec::new()
             }
-        }
-
-        pub fn select_type(&mut self, input_type: String) {
-            self.specific_file_type = Some(input_type);
         }
 
         fn read_folder_files(&mut self) -> Result<(), Box<dyn std::error::Error>> {
             for file in fs::read_dir(&self.path)? {
                 match file {
                     Ok(successful_file) => self.files.push(successful_file),
-                    Err(_) => {}
+                    Err(e) => return Err(e.into())
                 }
             }
             Ok(())
@@ -59,6 +53,13 @@ mod file_manager {
                 },
                 Err(e) => Err(e)
             }
+        }
+
+        pub fn delete_file(&mut self, target_file_paths: Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+            for file_path in target_file_paths {
+                fs::remove_file(file_path)?
+            }
+            Ok(())
         }
     }
 }
