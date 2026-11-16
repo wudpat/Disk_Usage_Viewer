@@ -1,19 +1,76 @@
 pub mod file_manager {
-    use std::fs;
+    use std::{ffi::OsString, fs::{self, File}, path::PathBuf};
 
     #[derive(Debug, Clone)]
     pub struct FileInfo {
-        pub name: String,
-        pub path: String,
+        pub name: OsString,
+        pub path: PathBuf,
         pub size: u64,
     }
 
-    pub struct SelectedFolder {
+    pub struct FileManager {
         path: String,
-        files: Vec<fs::DirEntry>
+        files: Vec<FileInfo>,
+        history: Vec<FileInfo>
     }
     
-    impl SelectedFolder {
+    impl FileManager {
+        pub fn new(input_path: String) -> FileManager {
+            FileManager {
+                path: input_path,
+                files: Vec::new(),
+                history: Vec::new()
+            }
+        }
+
+        fn read_folder_files(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+            self.files.clear();
+            for file in fs::read_dir(&self.path)? {
+                match file {
+                    Ok(successful_file) if successful_file.file_type()?.is_file() => self.files.push(FileInfo {
+                        name: successful_file.file_name(),
+                        path: successful_file.path(),
+                        size: successful_file.metadata()?.len()
+                    }),
+                    Ok(_) => {},
+                    Err(e) => return Err(e.into())
+                }
+            }
+            Ok(())
+        }
+
+        pub fn rank_file_size(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+            match self.read_folder_files() {
+                Ok(_) => {
+                    self.files.sort_by(|f1, f2| {
+                        f2.size.cmp(&f1.size)
+                    });
+                    Ok(())
+                },
+                Err(e) => Err(e)
+            }
+        }
+
+        pub fn delete_file(&mut self, target_files: Vec<FileInfo>) -> Result<(), Box<dyn std::error::Error>> {
+            for file in target_files {
+                fs::remove_file(&file.path)?;
+                self.log(file);
+            }
+            Ok(())
+        }
+
+        fn log(&mut self, target_file: FileInfo) {
+            self.history.push(target_file)
+        }
+
+        pub fn get_files(&self) -> &Vec<FileInfo> {
+            &self.files
+        }
+
+        pub fn get_history(&self) -> &Vec<FileInfo> {
+            &self.history
+        }
+
         pub fn format_size(bytes: u64) -> String {
             const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
             if bytes < 1024 {
@@ -26,66 +83,6 @@ pub mod file_manager {
                 unit += 1;
             }
             format!("{:.2} {}", value, UNITS[unit])
-        }
-
-        pub fn new(input_path: String) -> SelectedFolder {
-            SelectedFolder {
-                path: input_path,
-                files: Vec::new()
-            }
-        }
-
-        fn read_folder_files(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            self.files.clear();
-            for file in fs::read_dir(&self.path)? {
-                match file {
-                    Ok(successful_file) if successful_file.file_type()?.is_file() => self.files.push(successful_file),
-                    Ok(_) => {},
-                    Err(e) => return Err(e.into())
-                }
-            }
-            Ok(())
-        }
-
-        pub fn rank_file_size(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            match self.read_folder_files() {
-                Ok(_) => {
-                    let mut sort_error = None;
-                    self.files.sort_by(|f1, f2| {
-                        let f1_size = match f1.metadata() {
-                            Ok(m_data) => m_data.len(),
-                            Err(e) => {
-                                sort_error = Some(e);
-                                return std::cmp::Ordering::Equal;
-                            }
-                        };
-                        let f2_size = match f2.metadata() {
-                            Ok(m_data) => m_data.len(),
-                            Err(e) => {
-                                sort_error = Some(e);
-                                return std::cmp::Ordering::Equal;
-                            }
-                        };
-                        f2_size.cmp(&f1_size)
-                    });
-                    if let Some(e) = sort_error {
-                        return Err(e.into());
-                    }
-                    Ok(())
-                },
-                Err(e) => Err(e)
-            }
-        }
-
-        pub fn delete_file(&mut self, target_file_paths: &Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
-            for file_path in target_file_paths {
-                fs::remove_file(file_path)?
-            }
-            Ok(())
-        }
-
-        pub fn get_files(&self) -> &Vec<fs::DirEntry> {
-            &self.files
         }
     }
 }
