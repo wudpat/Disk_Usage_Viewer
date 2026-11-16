@@ -50,9 +50,7 @@ struct DiskViewer {
     limit_input: String,
 }
 
-// ---------- background work (uses file_manager unchanged) ----------
 
-/// Read + rank a folder with SelectedFolder and convert to plain data.
 fn scan_blocking(path: String) -> Result<Vec<FileInfo>, String> {
     let mut folder = SelectedFolder::new(path);
     folder.rank_file_size().map_err(|e| e.to_string())?;
@@ -88,7 +86,7 @@ async fn pick_folder() -> Option<String> {
         .map(|h| h.path().to_string_lossy().into_owned())
 }
 
-// ---------- application ----------
+
 
 impl Application for DiskViewer {
     type Executor = executor::Default;
@@ -192,7 +190,7 @@ impl Application for DiskViewer {
                 )
             }
             Message::Deleted(result) => {
-                // keep any delete error visible, then rescan so the list matches the disk
+                
                 self.error = result.err();
                 self.selected.clear();
                 self.screen = Screen::Files;
@@ -205,9 +203,8 @@ impl Application for DiskViewer {
                 Command::none()
             }
             Message::LimitChanged(s) => {
-                // keep digits only; empty or 0 means "show all"
                 self.limit_input = s.chars().filter(|c| c.is_ascii_digit()).collect();
-                // never keep hidden files selected, so they can't be deleted by accident
+                
                 let visible: HashSet<String> =
                     self.visible_files().iter().map(|f| f.path.clone()).collect();
                 self.selected.retain(|p| visible.contains(p));
@@ -248,8 +245,7 @@ fn loading_text(loading: bool) -> Element<'static, Message> {
 }
 
 impl DiskViewer {
-    /// The largest N files (files are already sorted largest first).
-    /// Empty, 0 or invalid input shows all files.
+    
     fn visible_files(&self) -> &[FileInfo] {
         match self.limit_input.parse::<usize>() {
             Ok(n) if n > 0 => &self.files[..n.min(self.files.len())],
