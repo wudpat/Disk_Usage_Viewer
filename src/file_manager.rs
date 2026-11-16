@@ -1,5 +1,12 @@
-mod file_manager {
+pub mod file_manager {
     use std::fs;
+
+    #[derive(Debug, Clone)]
+    pub struct FileInfo {
+        pub name: String,
+        pub path: String,
+        pub size: u64,
+    }
 
     pub struct SelectedFolder {
         path: String,
@@ -7,6 +14,20 @@ mod file_manager {
     }
     
     impl SelectedFolder {
+        pub fn format_size(bytes: u64) -> String {
+            const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
+            if bytes < 1024 {
+                return format!("{} B", bytes);
+            }
+            let mut value = bytes as f64;
+            let mut unit = 0;
+            while value >= 1024.0 && unit < UNITS.len() - 1 {
+                value /= 1024.0;
+                unit += 1;
+            }
+            format!("{:.2} {}", value, UNITS[unit])
+        }
+
         pub fn new(input_path: String) -> SelectedFolder {
             SelectedFolder {
                 path: input_path,
