@@ -392,7 +392,7 @@ impl DiskViewer {
         }
 
         column![
-            text("Delete history (MySQL)").size(28),
+            text("Delete history ").size(28),
             row![
                 action_button("Back", Message::GoHome, true),
                 action_button("Refresh", Message::ShowHistory, !self.loading),
