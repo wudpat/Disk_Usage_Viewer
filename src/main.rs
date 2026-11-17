@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use iced::widget::{button, checkbox, column, container, row, scrollable, text, text_input};
-use iced::{executor, Application, Color, Command, Element, Length, Settings, Theme};
+use iced::{Application, Color, Command, Element, Length, Settings, Theme, executor};
 
 use db::LogEntry;
 use file_manager::file_manager::{FileInfo, FileManager};
@@ -209,8 +209,11 @@ impl Application for DiskViewer {
             }
             Message::LimitChanged(s) => {
                 self.limit_input = s.chars().filter(|c| c.is_ascii_digit()).collect();
-                let visible: HashSet<PathBuf> =
-                    self.visible_files().iter().map(|f| f.path.clone()).collect();
+                let visible: HashSet<PathBuf> = self
+                    .visible_files()
+                    .iter()
+                    .map(|f| f.path.clone())
+                    .collect();
                 self.selected.retain(|p| visible.contains(p));
             }
             Message::ToggleTheme => self.dark = !self.dark,
@@ -218,10 +221,7 @@ impl Application for DiskViewer {
                 self.screen = Screen::History;
                 self.loading = true;
                 self.error = None;
-                return Command::perform(
-                    async { db::load_history() },
-                    Message::HistoryLoaded,
-                );
+                return Command::perform(async { db::load_history() }, Message::HistoryLoaded);
             }
             Message::HistoryLoaded(result) => {
                 self.loading = false;
@@ -261,13 +261,21 @@ fn loading_text(loading: bool) -> Element<'static, Message> {
 
 fn action_button(label: &str, msg: Message, enabled: bool) -> Element<'_, Message> {
     let b = button(label);
-    if enabled { b.on_press(msg).into() } else { b.into() }
+    if enabled {
+        b.on_press(msg).into()
+    } else {
+        b.into()
+    }
 }
 
 impl DiskViewer {
     fn home_view(&self) -> Element<'_, Message> {
         let idle = !self.loading;
-        let theme_label = if self.dark { "Light theme" } else { "Dark theme" };
+        let theme_label = if self.dark {
+            "Light theme"
+        } else {
+            "Dark theme"
+        };
 
         column![
             text("Disk Usage Viewer").size(32),

@@ -1,5 +1,5 @@
-use mysql::prelude::*;
 use mysql::Pool;
+use mysql::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct LogEntry {
@@ -15,7 +15,8 @@ fn db_url() -> String {
 }
 
 fn connect() -> Result<mysql::PooledConn, String> {
-    let pool = Pool::new(db_url().as_str()).map_err(|e| format!("MySQL connection failed: {}", e))?;
+    let pool =
+        Pool::new(db_url().as_str()).map_err(|e| format!("MySQL connection failed: {}", e))?;
     let mut conn = pool
         .get_conn()
         .map_err(|e| format!("MySQL connection failed: {}", e))?;
